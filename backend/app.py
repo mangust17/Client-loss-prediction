@@ -23,6 +23,9 @@ import tempfile
 import plotly.io as pio
 import base64
 
+pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
+pdfmetrics.registerFont(TTFont('Arial-Bold', 'arialbd.ttf'))
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -142,6 +145,8 @@ def predict_batch():
             error_msg = f"В CSV отсутствуют следующие колонки: {', '.join(missing_features)}"
             logger.error(error_msg)
             return jsonify({"error": error_msg}), 400
+
+        original_ids = df['id'].copy() if 'id' in df.columns else df.index.astype(str)
         
         df = preprocess_data(df)
         df = df[model_features]
@@ -149,7 +154,7 @@ def predict_batch():
         probabilities = model.predict_proba(df)[:, 1]
         final_probabilities = [float(p) if pred == 1 else 1 - float(p) for pred, p in zip(predictions, probabilities)]
         results = pd.DataFrame({
-            'id': range(len(df)),
+            'id': original_ids,
             'churn': predictions,
             'probability': final_probabilities
         })
@@ -247,67 +252,52 @@ def get_plot(plot_name):
 
 def create_pdf_report(predictions_df, plots_data):
     """Создание PDF отчета с визуализациями"""
-    # Создаем временный файл для PDF
     temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
     doc = SimpleDocTemplate(temp_pdf.name, pagesize=landscape(letter))
-    
-    # Создаем список элементов для PDF
+
     elements = []
 
-    # Добавляем заголовок
-    styles = getSampleStyleSheet()
-
-    # Добавляем таблицу с результатами как изображение
     if not predictions_df.empty:
         try:
-            # Создаем таблицу с помощью matplotlib
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.axis('tight')
-            ax.axis('off')
-            
-            # Подготавливаем данные для таблицы
             table_data = [['ID', 'Отток', 'Вероятность']]
+
             for _, row in predictions_df.iterrows():
                 churn_text = 'Да' if row['churn'] == 1 else 'Нет'
                 probability = f"{row['probability'] * 100:.2f}%"
                 table_data.append([str(row['id']), churn_text, probability])
+
+            table = Table(table_data)
+
+            style = TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Arial-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#DCE6F1')),
+                ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                ('FONTNAME', (0, 1), (-1, -1), 'Arial'),
+                ('FONTSIZE', (0, 1), (-1, -1), 10),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F2F2')])
+            ])
             
-            # Создаем таблицу
-            table = ax.table(cellText=table_data, loc='center', cellLoc='center')
+            table.setStyle(style)
+
+            table._argW[0] = 2*inch 
+            table._argW[1] = 1.5*inch
+            table._argW[2] = 2*inch
             
-            # Настраиваем стиль таблицы
-            table.auto_set_font_size(False)
-            table.set_fontsize(12)
-            table.scale(1.2, 1.5)
-            
-            # Настраиваем цвета
-            for (row, col), cell in table.get_celld().items():
-                if row == 0:  # Заголовок
-                    cell.set_facecolor('#4F81BD')
-                    cell.set_text_props(color='white', weight='bold')
-                else:  # Данные
-                    cell.set_facecolor('#DCE6F1')
-            
-            # Сохраняем таблицу как изображение
-            temp_img = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-            plt.savefig(temp_img.name, bbox_inches='tight', dpi=300)
-            plt.close()
-            
-            # Добавляем изображение в PDF
-            img = Image(temp_img.name, width=10*inch, height=6*inch)
-            elements.append(img)
+            elements.append(table)
             elements.append(Spacer(1, 30))
-            
-            # Удаляем временный файл изображения
-            os.remove(temp_img.name)
             
         except Exception as e:
             logger.error(f"Ошибка при создании таблицы: {str(e)}")
 
-    # Добавляем визуализации
     if plots_data:
         try:
-            # Распределение вероятностей
             if 'probability_distribution' in plots_data:
                 img_data = plots_data['probability_distribution'].split(',')[1]
                 img_bytes = io.BytesIO(base64.b64decode(img_data))
@@ -315,7 +305,6 @@ def create_pdf_report(predictions_df, plots_data):
                 elements.append(img)
                 elements.append(Spacer(1, 20))
 
-            # Соотношение оттока
             if 'churn_ratio' in plots_data:
                 img_data = plots_data['churn_ratio'].split(',')[1]
                 img_bytes = io.BytesIO(base64.b64decode(img_data))
@@ -323,7 +312,6 @@ def create_pdf_report(predictions_df, plots_data):
                 elements.append(img)
                 elements.append(Spacer(1, 20))
 
-            # Распределение платежей
             if 'monthly_charges_boxplot' in plots_data:
                 img_data = plots_data['monthly_charges_boxplot'].split(',')[1]
                 img_bytes = io.BytesIO(base64.b64decode(img_data))
@@ -332,8 +320,7 @@ def create_pdf_report(predictions_df, plots_data):
 
         except Exception as e:
             logger.error(f"Ошибка при добавлении графиков в PDF: {str(e)}")
-    
-    # Создаем PDF
+
     doc.build(elements)
     return temp_pdf.name
 
@@ -343,11 +330,9 @@ def download_report():
         data = request.get_json()
         predictions_df = pd.DataFrame(data['predictions'])
         plots = data['plots']
-        
-        # Создаем PDF отчет
+
         pdf_path = create_pdf_report(predictions_df, plots)
-        
-        # Отправляем файл
+
         return send_file(
             pdf_path,
             mimetype='application/pdf',
@@ -358,7 +343,6 @@ def download_report():
         logger.error(f"Ошибка при создании PDF: {str(e)}")
         return jsonify({"error": str(e)}), 400
     finally:
-        # Удаляем временный файл
         if 'pdf_path' in locals():
             try:
                 os.remove(pdf_path)
