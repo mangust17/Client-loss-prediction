@@ -21,6 +21,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
 import tempfile
 import plotly.io as pio
+import base64
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -243,125 +244,45 @@ def get_plot(plot_name):
         return jsonify({"error": str(e)}), 400
 
 def create_pdf_report(predictions_df, plots_data):
-    """Создание PDF отчета с результатами анализа"""
+    """Создание PDF отчета с визуализациями"""
     # Создаем временный файл для PDF
     temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
     doc = SimpleDocTemplate(temp_pdf.name, pagesize=landscape(letter))
     
     # Создаем список элементов для PDF
     elements = []
-    styles = getSampleStyleSheet()
-    
-    # Добавляем заголовок
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        spaceAfter=30,
-        alignment=1  # Center alignment
-    )
-    elements.append(Paragraph("Отчет по анализу оттока клиентов", title_style))
-    elements.append(Spacer(1, 20))
-    
-    # Добавляем общую статистику
-    total_clients = len(predictions_df)
-    churn_clients = predictions_df['churn'].sum()
-    churn_rate = (churn_clients / total_clients) * 100
-    
-    stats_style = ParagraphStyle(
-        'Stats',
-        parent=styles['Normal'],
-        fontSize=12,
-        spaceAfter=12,
-        alignment=1  # Center alignment
-    )
-    
-    elements.append(Paragraph(f"Общее количество клиентов: {total_clients}", stats_style))
-    elements.append(Paragraph(f"Количество клиентов с прогнозируемым оттоком: {int(churn_clients)}", stats_style))
-    elements.append(Paragraph(f"Процент оттока: {churn_rate:.2f}%", stats_style))
-    elements.append(Spacer(1, 20))
 
-    # Добавляем графики, если они есть
+    # Добавляем визуализации
     if plots_data:
-        elements.append(Paragraph("Визуализация результатов", styles['Heading2']))
-        elements.append(Spacer(1, 12))
-
-        # Создаем временные файлы для каждого графика
-        plot_files = []
-        
         try:
             # Распределение вероятностей
             if 'probability_distribution' in plots_data:
-                fig1 = go.Figure(**json.loads(plots_data['probability_distribution']))
-                temp_plot1 = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-                pio.write_image(fig1, temp_plot1.name, format='png', width=800, height=400)
-                plot_files.append(temp_plot1.name)
-                img1 = Image(temp_plot1.name, width=7*inch, height=3.5*inch)
-                elements.append(img1)
-                elements.append(Spacer(1, 12))
+                img_data = plots_data['probability_distribution'].split(',')[1]
+                img_bytes = io.BytesIO(base64.b64decode(img_data))
+                img = Image(img_bytes, width=8*inch, height=4*inch)
+                elements.append(img)
+                elements.append(Spacer(1, 20))
 
             # Соотношение оттока
             if 'churn_ratio' in plots_data:
-                fig2 = go.Figure(**json.loads(plots_data['churn_ratio']))
-                temp_plot2 = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-                pio.write_image(fig2, temp_plot2.name, format='png', width=800, height=400)
-                plot_files.append(temp_plot2.name)
-                img2 = Image(temp_plot2.name, width=7*inch, height=3.5*inch)
-                elements.append(img2)
-                elements.append(Spacer(1, 12))
+                img_data = plots_data['churn_ratio'].split(',')[1]
+                img_bytes = io.BytesIO(base64.b64decode(img_data))
+                img = Image(img_bytes, width=8*inch, height=4*inch)
+                elements.append(img)
+                elements.append(Spacer(1, 20))
 
             # Распределение платежей
             if 'monthly_charges_boxplot' in plots_data:
-                fig3 = go.Figure(**json.loads(plots_data['monthly_charges_boxplot']))
-                temp_plot3 = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-                pio.write_image(fig3, temp_plot3.name, format='png', width=800, height=400)
-                plot_files.append(temp_plot3.name)
-                img3 = Image(temp_plot3.name, width=7*inch, height=3.5*inch)
-                elements.append(img3)
-                elements.append(Spacer(1, 20))
+                img_data = plots_data['monthly_charges_boxplot'].split(',')[1]
+                img_bytes = io.BytesIO(base64.b64decode(img_data))
+                img = Image(img_bytes, width=8*inch, height=4*inch)
+                elements.append(img)
+
         except Exception as e:
-            logger.error(f"Ошибка при создании графиков: {str(e)}")
-    
-    # Добавляем таблицу с детальными результатами
-    elements.append(Paragraph("Детальные результаты по клиентам", styles['Heading2']))
-    elements.append(Spacer(1, 12))
-    
-    # Создаем таблицу
-    table_data = [['ID', 'Отток', 'Вероятность']]
-    for _, row in predictions_df.iterrows():
-        table_data.append([
-            str(row['id']),
-            'Да' if row['churn'] else 'Нет',
-            f"{row['probability']*100:.2f}%"
-        ])
-    
-    table = Table(table_data, colWidths=[2*inch, 2*inch, 2*inch])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 12),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-    elements.append(table)
+            logger.error(f"Ошибка при добавлении графиков в PDF: {str(e)}")
     
     # Создаем PDF
     doc.build(elements)
-
-    # Удаляем временные файлы графиков
-    try:
-        for plot_file in plot_files:
-            os.remove(plot_file)
-    except:
-        pass
-
     return temp_pdf.name
 
 @app.route("/download-report", methods=["POST"])

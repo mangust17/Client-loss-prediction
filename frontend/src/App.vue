@@ -255,11 +255,42 @@ const downloadSampleCsv = () => {
 const downloadPdfReport = async () => {
   try {
     error.value = null;
+
+    // Получаем изображения графиков
+    const plotImages = {};
+    
+    if (probabilityPlot.value) {
+      const probabilityImg = await Plotly.toImage(probabilityPlot.value, {
+        format: 'png',
+        width: 800,
+        height: 400
+      });
+      plotImages.probability_distribution = probabilityImg;
+    }
+    
+    if (churnPlot.value) {
+      const churnImg = await Plotly.toImage(churnPlot.value, {
+        format: 'png',
+        width: 800,
+        height: 400
+      });
+      plotImages.churn_ratio = churnImg;
+    }
+    
+    if (chargesPlot.value) {
+      const chargesImg = await Plotly.toImage(chargesPlot.value, {
+        format: 'png',
+        width: 800,
+        height: 400
+      });
+      plotImages.monthly_charges_boxplot = chargesImg;
+    }
+
     const response = await axios.post(
       "http://127.0.0.1:5000/download-report",
       {
         predictions: csvResult.value,
-        plots: plots.value
+        plots: plotImages
       },
       { responseType: 'blob' }
     );
