@@ -106,9 +106,10 @@ def predict():
         df = preprocess_data(df)
         prediction = model.predict(df)
         probability = model.predict_proba(df)[:, 1]
+        final_probability = float(probability[0]) if prediction[0] == 1 else 1 - float(probability[0])
         return jsonify({
             "churn": int(prediction[0]),
-            "probability": float(probability[0])
+            "probability": final_probability
         })
     
     except Exception as e:
@@ -146,10 +147,11 @@ def predict_batch():
         df = df[model_features]
         predictions = model.predict(df)
         probabilities = model.predict_proba(df)[:, 1]
+        final_probabilities = [float(p) if pred == 1 else 1 - float(p) for pred, p in zip(predictions, probabilities)]
         results = pd.DataFrame({
             'id': range(len(df)),
             'churn': predictions,
-            'probability': probabilities
+            'probability': final_probabilities
         })
 
         plots = create_visualizations(df, predictions, probabilities)
@@ -193,12 +195,12 @@ def create_visualizations(df, predictions, probabilities):
         margin=dict(l=40, r=40, t=40, b=40)
     )
 
-    churn_counts = pd.Series(predictions).value_counts()
+    churn_counts = pd.Series(predictions).value_counts().sort_index()
     fig2 = px.pie(
         values=churn_counts.values,
         names=['Остаются', 'Уходят'],
         title='Соотношение оттока клиентов',
-        color_discrete_sequence=['#42b983', '#ff7f7f']
+        color_discrete_sequence=['#ff7f7f', '#42b983']
     )
     fig2.update_traces(
         textinfo='percent+label',
