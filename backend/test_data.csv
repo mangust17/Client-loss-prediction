@@ -1,0 +1,6 @@
+id,type,paperless_billing,payment_method,monthly_charges,total_charges,contract_length_days,senior_citizen,partner,dependents,MultipleLines
+1,Month-to-month,Yes,Electronic check,65.5,1000.5,30,0,Yes,No,No
+2,One year,No,Credit card (automatic),89.3,2500.7,365,1,No,Yes,Yes
+3,Two year,Yes,Bank transfer (automatic),75.2,1800.3,730,0,Yes,No,No
+4,Month-to-month,Yes,Electronic check,45.6,800.2,30,0,No,No,Yes
+5,One year,No,Credit card (automatic),95.7,3000.1,365,1,Yes,Yes,No 
