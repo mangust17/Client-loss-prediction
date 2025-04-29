@@ -254,6 +254,56 @@ def create_pdf_report(predictions_df, plots_data):
     # Создаем список элементов для PDF
     elements = []
 
+    # Добавляем заголовок
+    styles = getSampleStyleSheet()
+
+    # Добавляем таблицу с результатами как изображение
+    if not predictions_df.empty:
+        try:
+            # Создаем таблицу с помощью matplotlib
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.axis('tight')
+            ax.axis('off')
+            
+            # Подготавливаем данные для таблицы
+            table_data = [['ID', 'Отток', 'Вероятность']]
+            for _, row in predictions_df.iterrows():
+                churn_text = 'Да' if row['churn'] == 1 else 'Нет'
+                probability = f"{row['probability'] * 100:.2f}%"
+                table_data.append([str(row['id']), churn_text, probability])
+            
+            # Создаем таблицу
+            table = ax.table(cellText=table_data, loc='center', cellLoc='center')
+            
+            # Настраиваем стиль таблицы
+            table.auto_set_font_size(False)
+            table.set_fontsize(12)
+            table.scale(1.2, 1.5)
+            
+            # Настраиваем цвета
+            for (row, col), cell in table.get_celld().items():
+                if row == 0:  # Заголовок
+                    cell.set_facecolor('#4F81BD')
+                    cell.set_text_props(color='white', weight='bold')
+                else:  # Данные
+                    cell.set_facecolor('#DCE6F1')
+            
+            # Сохраняем таблицу как изображение
+            temp_img = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+            plt.savefig(temp_img.name, bbox_inches='tight', dpi=300)
+            plt.close()
+            
+            # Добавляем изображение в PDF
+            img = Image(temp_img.name, width=10*inch, height=6*inch)
+            elements.append(img)
+            elements.append(Spacer(1, 30))
+            
+            # Удаляем временный файл изображения
+            os.remove(temp_img.name)
+            
+        except Exception as e:
+            logger.error(f"Ошибка при создании таблицы: {str(e)}")
+
     # Добавляем визуализации
     if plots_data:
         try:
