@@ -190,7 +190,6 @@ def create_visualizations(df, predictions, probabilities):
     fig1 = px.histogram(
         x=probabilities,
         nbins=30,
-        title='Распределение вероятностей оттока',
         labels={'x': 'Вероятность оттока', 'y': 'Количество клиентов'},
         color_discrete_sequence=['#42b983']
     )
@@ -204,7 +203,6 @@ def create_visualizations(df, predictions, probabilities):
     fig2 = px.pie(
         values=churn_counts.values,
         names=['Остаются', 'Уходят'],
-        title='Соотношение оттока клиентов',
         color_discrete_sequence=['#ff7f7f', '#42b983']
     )
     fig2.update_traces(
@@ -222,7 +220,6 @@ def create_visualizations(df, predictions, probabilities):
         x=predictions,
         y='monthly_charges',
         color=predictions,
-        title='Распределение ежемесячных платежей по группам оттока',
         labels={'x': 'Отток (0 - остаются, 1 - уходят)', 'y': 'Ежемесячные платежи'},
         color_discrete_sequence=['#42b983', '#ff7f7f']
     )

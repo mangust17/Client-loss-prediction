@@ -1,5 +1,4 @@
 <template>
-  <div class="app-wrapper">
     <div class="container">
       <h1>Предсказание оттока клиентов</h1>
 
@@ -114,7 +113,6 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -317,40 +315,32 @@ watch(mode, () => {
 </script>
 
 <style>
-.app-wrapper {
+#app {
+  width: 100%;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  width: 100%;
 }
 
 .container { 
-  padding: 20px;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 1200px;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.single-center-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
 }
 
 .form { 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center;
-  width: 100%; 
-  max-width: 400px; 
-  margin: 0 auto; 
-  text-align: left;
+  width: 100%;
+  max-width: 600px;
+  margin: 1rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 input, select, button { 
@@ -385,7 +375,6 @@ table {
 th, td { 
   border: 1px solid #ccc; 
   padding: 8px; 
-  text-align: center; 
 }
 
 th { 
@@ -393,23 +382,23 @@ th {
 }
 
 .plots-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 30px;
-  margin-top: 30px;
-  padding: 20px;
   width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
 }
 
 .plot {
+  width: 100%;
+  max-width: 1000px;
   background: white;
-  padding: 20px;
+  padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  width: 100%;
-  max-width: 600px;
-  height: 500px;
   display: flex;
   flex-direction: column;
   align-items: center;
