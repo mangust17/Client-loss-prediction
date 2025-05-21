@@ -188,12 +188,13 @@ def create_visualizations(df, predictions, probabilities):
     os.makedirs(plots_dir, exist_ok=True)
 
     fig1 = px.histogram(
-        x=probabilities,
-        nbins=30,
-        labels={'x': 'Вероятность оттока', 'y': 'Количество клиентов'},
-        color_discrete_sequence=['#42b983']
+    x=probabilities,
+    nbins=30,
+    labels={'x': 'Вероятность оттока', 'y': 'Количество клиентов'},
+    color_discrete_sequence=['#42b983']
     )
     fig1.update_layout(
+        title='Распределение вероятностей оттока',
         template='plotly_white',
         showlegend=False,
         margin=dict(l=40, r=40, t=40, b=40)
@@ -211,10 +212,11 @@ def create_visualizations(df, predictions, probabilities):
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
     fig2.update_layout(
+        title='Доля клиентов по оттоку',
         template='plotly_white',
         margin=dict(l=40, r=40, t=40, b=40)
     )
-    
+
     fig3 = px.box(
         df,
         x=predictions,
@@ -224,10 +226,12 @@ def create_visualizations(df, predictions, probabilities):
         color_discrete_sequence=['#42b983', '#ff7f7f']
     )
     fig3.update_layout(
+        title='Платежи по статусу оттока',
         template='plotly_white',
         showlegend=False,
         margin=dict(l=40, r=40, t=40, b=40)
     )
+
 
     plots = {
         'probability_distribution': json.dumps(fig1.to_dict(), cls=PlotlyJSONEncoder),

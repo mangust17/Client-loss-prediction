@@ -98,15 +98,12 @@
           <h2>Визуализация результатов</h2>
           <div class="plots-container">
             <div class="plot">
-              <h3>Распределение вероятностей оттока</h3>
               <div ref="probabilityPlot" style="width: 100%; height: 400px;"></div>
             </div>
             <div class="plot">
-              <h3>Соотношение оттока клиентов</h3>
               <div ref="churnPlot" style="width: 100%; height: 400px;"></div>
             </div>
             <div class="plot">
-              <h3>Распределение ежемесячных платежей</h3>
               <div ref="chargesPlot" style="width: 100%; height: 400px;"></div>
             </div>
           </div>
@@ -254,7 +251,6 @@ const downloadPdfReport = async () => {
   try {
     error.value = null;
 
-    // Получаем изображения графиков
     const plotImages = {};
     
     if (probabilityPlot.value) {
