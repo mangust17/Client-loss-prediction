@@ -25,9 +25,6 @@ import base64
 from flask import send_from_directory
 
 
-pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
-pdfmetrics.registerFont(TTFont('Arial-Bold', 'arialbd.ttf'))
-
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
