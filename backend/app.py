@@ -349,14 +349,13 @@ def download_report():
             except:
                 pass
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_vue_app(path):
-    root_dir = os.path.join(os.path.dirname(__file__), '../frontend/dist')
-    if path != "" and os.path.exists(os.path.join(root_dir, path)):
-        return send_from_directory(root_dir, path)
-    else:
-        return send_from_directory(root_dir, 'index.html')
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_vue(path):
+    static_folder = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+    if path and os.path.exists(os.path.join(static_folder, path)):
+        return send_from_directory(static_folder, path)
+    return send_from_directory(static_folder, "index.html")
 
 
 if __name__ == "__main__":
