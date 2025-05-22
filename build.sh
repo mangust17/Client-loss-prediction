@@ -4,4 +4,4 @@ npm install
 npm run build
 cd ../backend
 pip install -r requirements.txt
-python app.py
+gunicorn -b 0.0.0.0:$PORT wsgi:app
