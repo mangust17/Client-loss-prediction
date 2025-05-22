@@ -22,6 +22,8 @@ from reportlab.lib.units import inch
 import tempfile
 import plotly.io as pio
 import base64
+from flask import send_from_directory
+
 
 pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 pdfmetrics.registerFont(TTFont('Arial-Bold', 'arialbd.ttf'))
@@ -349,6 +351,16 @@ def download_report():
                 os.remove(pdf_path)
             except:
                 pass
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_vue_app(path):
+    root_dir = os.path.join(os.path.dirname(__file__), '../frontend/dist')
+    if path != "" and os.path.exists(os.path.join(root_dir, path)):
+        return send_from_directory(root_dir, path)
+    else:
+        return send_from_directory(root_dir, 'index.html')
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
