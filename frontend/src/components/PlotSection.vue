@@ -17,13 +17,25 @@ const chargesPlot = ref(null)
 
 const renderPlots = () => {
   if (!props.plots) return
-  const { probability_distribution, churn_ratio, monthly_charges_boxplot } = props.plots
 
-  Plotly.newPlot(probabilityPlot.value, JSON.parse(probability_distribution).data, JSON.parse(probability_distribution).layout)
-  Plotly.newPlot(churnPlot.value, JSON.parse(churn_ratio).data, JSON.parse(churn_ratio).layout)
-  Plotly.newPlot(chargesPlot.value, JSON.parse(monthly_charges_boxplot).data, JSON.parse(monthly_charges_boxplot).layout)
+  const config = { responsive: true }
+
+  const parse = (plot) => ({
+    data: JSON.parse(plot).data,
+    layout: {
+      ...JSON.parse(plot).layout,
+      autosize: true,
+      width: null,
+      height: null,
+    }
+  })
+
+  Plotly.newPlot(probabilityPlot.value, ...Object.values(parse(props.plots.probability_distribution)), config)
+  Plotly.newPlot(churnPlot.value, ...Object.values(parse(props.plots.churn_ratio)), config)
+  Plotly.newPlot(chargesPlot.value, ...Object.values(parse(props.plots.monthly_charges_boxplot)), config)
 }
 
 onMounted(() => nextTick(renderPlots))
 watch(() => props.plots, renderPlots)
 </script>
+
