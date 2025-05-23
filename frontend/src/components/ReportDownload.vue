@@ -5,9 +5,10 @@
 <script setup>
 import axios from 'axios'
 const props = defineProps(['predictions', 'plots'])
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 const downloadPdf = async () => {
-  const response = await axios.post("http://127.0.0.1:5000/download-report", {
+  const response = await axios.post(`${API_BASE}/download-report`, {
     predictions: props.predictions,
     plots: props.plots
   }, { responseType: 'blob' })

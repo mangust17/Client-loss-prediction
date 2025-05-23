@@ -68,6 +68,8 @@
 import { ref, nextTick } from 'vue'
 import axios from 'axios'
 
+const API_BASE = import.meta.env.VITE_API_BASE;
+
 const formData = ref({
   type: 0,
   paperless_billing: 1,
@@ -86,7 +88,7 @@ const resultBlock = ref(null)
 
 const predictChurn = async () => {
   try {
-    const response = await axios.post("http://127.0.0.1:5000/predict", formData.value)
+    const response = await axios.post(`${API_BASE}/predict`, formData.value)
     result.value = response.data
     await nextTick()
     resultBlock.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })

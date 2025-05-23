@@ -22,6 +22,7 @@ import { ref, nextTick } from 'vue'
 import axios from 'axios'
 import PlotSection from './PlotSection.vue'
 import ReportDownload from './ReportDownload.vue'
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 const csvFile = ref(null)
 const csvResult = ref([])
@@ -33,7 +34,7 @@ const handleFileUpload = (e) => csvFile.value = e.target.files[0]
 const uploadCsv = async () => {
   const form = new FormData()
   form.append('file', csvFile.value)
-  const res = await axios.post("http://127.0.0.1:5000/predict-batch", form)
+  const res = await axios.post(`${API_BASE}/predict-batch`, form)
   csvResult.value = res.data.predictions
   plots.value = res.data.plots
 }
