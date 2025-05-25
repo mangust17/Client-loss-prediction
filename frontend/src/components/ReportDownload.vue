@@ -1,23 +1,51 @@
 <template>
-  <button @click="downloadPdf" class="download-button">Скачать PDF-отчет</button>
+  <div class="report-download">
+    <button @click="downloadReport">Скачать PDF отчет</button>
+  </div>
 </template>
 
 <script setup>
 import axios from 'axios'
-const props = defineProps(['predictions', 'plots'])
-const API_BASE = import.meta.env.VITE_API_BASE;
 
-const downloadPdf = async () => {
-  const response = await axios.post(`${API_BASE}/download-report`, {
-    predictions: props.predictions,
-    plots: props.plots
-  }, { responseType: 'blob' })
+const props = defineProps({
+  predictions: {
+    type: Array,
+    required: true
+  },
+  plots: {
+    type: Object,
+    required: true
+  }
+})
 
-  const blob = new Blob([response.data])
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = 'churn_report.pdf'
-  link.click()
+const downloadReport = async () => {
+  try {
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_BASE}/download-report`,
+      {
+        predictions: props.predictions,
+        plots: props.plots
+      },
+      {
+        responseType: 'blob'
+      }
+    )
+
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'churn_analysis_report.pdf')
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  } catch (error) {
+    console.error('Ошибка при скачивании отчета:', error)
+  }
 }
 </script>
+
+<style scoped>
+.report-download {
+  margin: 1rem 0;
+}
+</style>

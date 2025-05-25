@@ -17,14 +17,17 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import inch
 import tempfile
 import plotly.io as pio
 import base64
 from flask import send_from_directory
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from plotly.graph_objs import Figure
 
-
+pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
+pdfmetrics.registerFont(TTFont('Arial-Bold', 'arialbd.ttf'))
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -176,6 +179,10 @@ def predict_batch():
         logger.error(f"Необработанная ошибка в /predict-batch: {str(e)}")
         return jsonify({"error": str(e)}), 400
 
+def plot_from_json(json_str):
+    fig_dict = json.loads(json_str)
+    return Figure(fig_dict)
+
 
 def create_visualizations(df, predictions, probabilities):
     """Создание интерактивных графиков с помощью Plotly"""
@@ -246,6 +253,13 @@ def get_plot(plot_name):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
+def extract_base64_data(img_str):
+    if ',' in img_str:
+        return img_str.split(',')[1]
+    return img_str
+
+
 def create_pdf_report(predictions_df, plots_data):
     """Создание PDF отчета с визуализациями"""
     temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
@@ -268,12 +282,12 @@ def create_pdf_report(predictions_df, plots_data):
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Arial'),
                 ('FONTSIZE', (0, 0), (-1, 0), 12),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#DCE6F1')),
                 ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTNAME', (0, 1), (-1, -1), 'Arial'),
                 ('FONTSIZE', (0, 1), (-1, -1), 10),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
@@ -294,26 +308,14 @@ def create_pdf_report(predictions_df, plots_data):
 
     if plots_data:
         try:
-            if 'probability_distribution' in plots_data:
-                img_data = plots_data['probability_distribution'].split(',')[1]
-                img_bytes = io.BytesIO(base64.b64decode(img_data))
-                img = Image(img_bytes, width=8*inch, height=4*inch)
-                elements.append(img)
-                elements.append(Spacer(1, 20))
-
-            if 'churn_ratio' in plots_data:
-                img_data = plots_data['churn_ratio'].split(',')[1]
-                img_bytes = io.BytesIO(base64.b64decode(img_data))
-                img = Image(img_bytes, width=8*inch, height=4*inch)
-                elements.append(img)
-                elements.append(Spacer(1, 20))
-
-            if 'monthly_charges_boxplot' in plots_data:
-                img_data = plots_data['monthly_charges_boxplot'].split(',')[1]
-                img_bytes = io.BytesIO(base64.b64decode(img_data))
-                img = Image(img_bytes, width=8*inch, height=4*inch)
-                elements.append(img)
-
+            for key in ['probability_distribution', 'churn_ratio', 'monthly_charges_boxplot']:
+                if key in plots_data:
+                    # Извлекаем base64 данные из строки
+                    img_data = extract_base64_data(plots_data[key])
+                    img_bytes = base64.b64decode(img_data)
+                    img = Image(io.BytesIO(img_bytes), width=8*inch, height=4*inch)
+                    elements.append(img)
+                    elements.append(Spacer(1, 20))
         except Exception as e:
             logger.error(f"Ошибка при добавлении графиков в PDF: {str(e)}")
 
@@ -353,5 +355,5 @@ def serve_vue(path):
         return send_from_directory(static_folder, path)
     return send_from_directory(static_folder, "index.html")
 
-# if __name__ == "__main__":
-#     app.run(host="0.0.0.0", port=5000, debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

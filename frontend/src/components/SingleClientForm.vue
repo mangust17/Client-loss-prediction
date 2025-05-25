@@ -21,10 +21,10 @@
     </select>
 
     <label>Ежемесячные платежи:</label>
-    <input type="number" v-model.number="formData.monthly_charges" />
+    <input type="number" v-model.number="formData.monthly_charges" @input="updateTotalCharges" />
 
-    <label>Общие платежи:</label>
-    <input type="number" v-model.number="formData.total_charges" />
+    <label>Общие платежи (авто):</label>
+    <input type="number" :value="formData.total_charges" readonly />
 
     <label>Продолжительность контракта (дней):</label>
     <input type="number" v-model.number="formData.contract_length_days" />
@@ -55,7 +55,6 @@
 
     <button @click="predictChurn">Предсказать</button>
 
-    <!-- Результат и точка прокрутки -->
     <div v-if="result" ref="resultBlock" style="margin-top: 2rem;">
       <h2>Результат</h2>
       <p><strong>Отток:</strong> {{ result.churn ? 'Да' : 'Нет' }}</p>
@@ -65,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import axios from 'axios'
 
 const API_BASE = import.meta.env.VITE_API_BASE;
@@ -75,7 +74,7 @@ const formData = ref({
   paperless_billing: 1,
   payment_method: 0,
   monthly_charges: 50.0,
-  total_charges: 250.0,
+  total_charges: 600.0,
   contract_length_days: 180,
   senior_citizen: 0,
   partner: 1,
@@ -85,6 +84,10 @@ const formData = ref({
 
 const result = ref(null)
 const resultBlock = ref(null)
+
+const updateTotalCharges = () => {
+  formData.value.total_charges = +(formData.value.monthly_charges * 12).toFixed(2)
+}
 
 const predictChurn = async () => {
   try {
@@ -96,4 +99,6 @@ const predictChurn = async () => {
     console.error("Ошибка:", err)
   }
 }
+
+watch(() => formData.value.monthly_charges, updateTotalCharges, { immediate: true })
 </script>
