@@ -1,6 +1,6 @@
 <template>
   <div class="report-download">
-    <button @click="downloadReport">Скачать PDF отчет</button>
+    <button class="download-button";@click="downloadReport">Скачать PDF отчет</button>
   </div>
 </template>
 
