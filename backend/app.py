@@ -26,8 +26,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from plotly.graph_objs import Figure
 
-pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
-pdfmetrics.registerFont(TTFont('Arial-Bold', 'arialbd.ttf'))
+pdfmetrics.registerFont(TTFont("DejaVu", "fonts/dejavu-fonts-ttf-2.37/ttf/DejaVuSans.ttf"))
+pdfmetrics.registerFont(TTFont('DejaVu-Bold', 'fonts/dejavu-fonts-ttf-2.37/ttf/DejaVuSans-Bold.ttf'))
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -282,12 +282,12 @@ def create_pdf_report(predictions_df, plots_data):
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Arial'),
+                ('FONTNAME', (0, 0), (-1, 0), 'DejaVu'),
                 ('FONTSIZE', (0, 0), (-1, 0), 12),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#DCE6F1')),
                 ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                ('FONTNAME', (0, 1), (-1, -1), 'Arial'),
+                ('FONTNAME', (0, 1), (-1, -1), 'DejaVu-Bold'),
                 ('FONTSIZE', (0, 1), (-1, -1), 10),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
@@ -355,5 +355,5 @@ def serve_vue(path):
         return send_from_directory(static_folder, path)
     return send_from_directory(static_folder, "index.html")
 
-# if __name__ == "__main__":
-#     app.run(host="0.0.0.0", port=5000, debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
