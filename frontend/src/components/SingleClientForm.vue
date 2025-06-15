@@ -1,5 +1,11 @@
 <template>
   <div class="form">
+    <NotificationBanner 
+      v-if="error"
+      :message="error"
+      :isError="true"
+    />
+
     <label>Тип оплаты:</label>
     <select v-model="formData.type">
       <option :value="0">Ежемесячно</option>
@@ -55,10 +61,14 @@
 
     <button @click="predictChurn">Предсказать</button>
 
-    <div v-if="result" ref="resultBlock" style="margin-top: 2rem;">
+    <div v-if="result" ref="resultBlock" class="predictions-section">
       <h2>Результат</h2>
       <p><strong>Отток:</strong> {{ result.churn ? 'Да' : 'Нет' }}</p>
       <p><strong>Вероятность:</strong> {{ (result.probability * 100).toFixed(2) }}%</p>
+      
+      <NotificationBanner 
+        message="Обратите внимание: предсказания модели являются теоретическими и могут содержать погрешности. Результаты следует использовать как ориентировочные данные для принятия решений."
+      />
     </div>
   </div>
 </template>
@@ -66,6 +76,8 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
 import axios from 'axios'
+import NotificationBanner from './NotificationBanner.vue'
+import '../assets/styles/main.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
@@ -84,6 +96,7 @@ const formData = ref({
 
 const result = ref(null)
 const resultBlock = ref(null)
+const error = ref(null)
 
 const updateTotalCharges = () => {
   formData.value.total_charges = +(formData.value.monthly_charges * 12).toFixed(2)
@@ -91,12 +104,20 @@ const updateTotalCharges = () => {
 
 const predictChurn = async () => {
   try {
+    error.value = null
     const response = await axios.post(`${API_BASE}/predict`, formData.value)
     result.value = response.data
     await nextTick()
     resultBlock.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } catch (err) {
     console.error("Ошибка:", err)
+    if (err.response?.data?.detail) {
+      error.value = err.response.data.detail
+    } else if (err.response?.status === 422) {
+      error.value = 'Пожалуйста, проверьте правильность введенных данных. Все поля должны быть заполнены корректно.'
+    } else {
+      error.value = 'Произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз.'
+    }
   }
 }
 

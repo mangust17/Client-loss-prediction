@@ -3,22 +3,34 @@
     <input type="file" @change="handleFileUpload" accept=".csv" />
     <button @click="uploadCsv" :disabled="!csvFile">Предсказать для CSV</button>
 
-    <div ref="resultSection">
-      <ReportDownload v-if="csvResult.length" :predictions="csvResult" :plots="plotImages" />
-      <table v-if="csvResult.length">
-        <thead>
-          <tr><th>Клиент</th><th>Отток</th><th>Вероятность</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, i) in csvResult" :key="i">
-            <td>{{ row.id }}</td>
-            <td>{{ row.churn ? 'Да' : 'Нет' }}</td>
-            <td>{{ (row.probability * 100).toFixed(2) }}%</td>
-          </tr>
-        </tbody>
-      </table>
+    <NotificationBanner 
+      v-if="error"
+      :message="error"
+      :isError="true"
+    />
 
-      <PlotSection v-if="plots" :plots="plots" @plots-rendered="handlePlotsRendered" />
+    <div ref="resultSection">
+      <div v-if="csvResult.length" class="predictions-section">
+        <h2>Результаты предсказаний</h2>
+        <ReportDownload :predictions="csvResult" :plots="plotImages" />
+        <table>
+          <thead>
+            <tr><th>Клиент</th><th>Отток</th><th>Вероятность</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, i) in csvResult" :key="i">
+              <td>{{ row.id }}</td>
+              <td>{{ row.churn ? 'Да' : 'Нет' }}</td>
+              <td>{{ (row.probability * 100).toFixed(2) }}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="plots" class="plots-section">
+        <h2>Графики анализа</h2>
+        <PlotSection :plots="plots" @plots-rendered="handlePlotsRendered" />
+      </div>
     </div>
   </div>
 </template>
@@ -29,6 +41,8 @@ import axios from 'axios'
 import * as Plotly from 'plotly.js-dist-min'
 import PlotSection from './PlotSection.vue'
 import ReportDownload from './ReportDownload.vue'
+import NotificationBanner from './NotificationBanner.vue'
+import '../assets/styles/main.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
@@ -37,11 +51,16 @@ const csvResult = ref([])
 const plots = ref(null)
 const plotImages = ref({})
 const resultSection = ref(null)
+const error = ref(null)
 
-const handleFileUpload = (e) => csvFile.value = e.target.files[0]
+const handleFileUpload = (e) => {
+  csvFile.value = e.target.files[0]
+  error.value = null
+}
 
 const uploadCsv = async () => {
   try {
+    error.value = null
     const form = new FormData()
     form.append('file', csvFile.value)
     const res = await axios.post(`${API_BASE}/predict-batch`, form)
@@ -51,8 +70,15 @@ const uploadCsv = async () => {
 
     await nextTick()
     resultSection.value?.scrollIntoView({ behavior: 'smooth' })
-  } catch (error) {
-    console.error('Ошибка при загрузке CSV:', error)
+  } catch (err) {
+    console.error('Ошибка при загрузке CSV:', err)
+    if (err.response?.data?.detail) {
+      error.value = err.response.data.detail
+    } else if (err.response?.status === 422) {
+      error.value = 'Файл имеет неправильный формат или отсутствуют необходимые поля. Пожалуйста, проверьте структуру CSV файла.'
+    } else {
+      error.value = 'Произошла ошибка при обработке файла. Пожалуйста, попробуйте еще раз.'
+    }
   }
 }
 
