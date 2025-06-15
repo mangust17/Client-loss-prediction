@@ -19,7 +19,7 @@
 - Vite как сборщик проекта
 
 ### Backend
-- FastAPI
+- Flask
 - Scikit-learn для машинного обучения
 - Pandas для обработки данных
 - ReportLab для генерации PDF отчетов
